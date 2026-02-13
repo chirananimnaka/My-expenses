@@ -186,9 +186,14 @@ function App() {
 
       {/* Summary Card */}
       <div className="card summary-card">
-        <h3>Total Balance</h3>
-        <div className="summary-total">LKR {totalExpenses.toFixed(2)}</div>
-        <p>Total Spent So Far</p>
+        <h3>Daily Balance</h3>
+        <div className="summary-total">
+          LKR {expenses
+            .filter(e => e.date === new Date().toISOString().split('T')[0])
+            .reduce((acc, curr) => acc + curr.amount, 0)
+            .toFixed(2)}
+        </div>
+        <p>Total Spent Today</p>
       </div>
 
       {/* Add Expense Form */}
