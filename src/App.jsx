@@ -1,11 +1,20 @@
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 function App() {
   const [expenses, setExpenses] = useState(() => {
     const saved = localStorage.getItem('expenses');
     return saved ? JSON.parse(saved) : [];
+  });
+
+  const [budget, setBudget] = useState(() => {
+    const saved = localStorage.getItem('budget');
+    return saved ? parseFloat(saved) : 5000;
   });
 
   const [formData, setFormData] = useState({
@@ -23,6 +32,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('expenses', JSON.stringify(expenses));
   }, [expenses]);
+
+  useEffect(() => {
+    localStorage.setItem('budget', budget.toString());
+  }, [budget]);
 
   const categories = ['Food', 'Transport', 'Books', 'Leisure', 'Bills', 'Other'];
 
@@ -259,6 +272,69 @@ function App() {
             Add Expense
           </button>
         </form>
+      </div>
+
+      {/* Spending Analysis & Budget */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+
+        {/* Monthly Budget */}
+        <div className="card">
+          <h2 className="form-label" style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--primary)' }}>Monthly Budget</h2>
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#6b7280' }}>
+              <span>Spent: LKR {expenses.reduce((acc, curr) => acc + curr.amount, 0).toFixed(2)}</span>
+              <span>Limit: LKR {budget}</span>
+            </div>
+            {/* Progress Bar */}
+            <div style={{ height: '10px', backgroundColor: '#e5e7eb', borderRadius: '5px', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: `${Math.min((expenses.reduce((acc, curr) => acc + curr.amount, 0) / (budget || 1)) * 100, 100)}%`,
+                backgroundColor: expenses.reduce((acc, curr) => acc + curr.amount, 0) > budget ? '#ef4444' : '#10b981',
+                transition: 'width 0.3s ease'
+              }}></div>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Set Budget Limit (LKR)</label>
+            <input
+              type="number"
+              className="form-input"
+              value={budget}
+              onChange={(e) => setBudget(parseFloat(e.target.value) || 0)}
+              placeholder="Enter monthly budget"
+            />
+          </div>
+        </div>
+
+        {/* Category Chart */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <h2 className="form-label" style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--primary)', alignSelf: 'flex-start' }}>Category Analysis</h2>
+          <div style={{ width: '250px', height: '250px' }}>
+            {expenses.length > 0 ? (
+              <Pie
+                data={{
+                  labels: categories,
+                  datasets: [{
+                    data: categories.map(cat => expenses.filter(e => e.category === cat).reduce((acc, curr) => acc + curr.amount, 0)),
+                    backgroundColor: [
+                      '#10b981', // Food - Green
+                      '#3b82f6', // Transport - Blue
+                      '#f59e0b', // Books - Yellow
+                      '#8b5cf6', // Leisure - Purple
+                      '#ef4444', // Bills - Red
+                      '#6b7280'  // Other - Gray
+                    ],
+                    borderWidth: 0
+                  }]
+                }}
+                options={{ maintainAspectRatio: false }}
+              />
+            ) : (
+              <p style={{ textAlign: 'center', color: '#9ca3af', marginTop: '4rem' }}>No data to display</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Report Generation Section */}
