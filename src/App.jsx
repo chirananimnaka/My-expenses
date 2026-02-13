@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { db } from './firebase';
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 function App() {
-  const [expenses, setExpenses] = useState([]);
+  const [expenses, setExpenses] = useState(() => {
+    const saved = localStorage.getItem('expenses');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -19,55 +20,9 @@ function App() {
     end: new Date().toISOString().split('T')[0]
   });
 
-  // Load expenses from Firestore
-  // Load expenses from Firestore
   useEffect(() => {
-    const q = query(collection(db, "expenses"), orderBy("date", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const expensesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setExpenses(expensesData);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // One-time migration of local storage data to Firestore (Fixed)
-  useEffect(() => {
-    const migrateData = async () => {
-      const localData = localStorage.getItem('expenses');
-
-      if (localData) {
-        try {
-          const parsedData = JSON.parse(localData);
-          if (Array.isArray(parsedData) && parsedData.length > 0) {
-            console.log('Starting migration...', parsedData.length);
-
-            // Wait for ALL uploads to finish
-            await Promise.all(parsedData.map(async (item) => {
-              // Remove local ID, let Firestore handle it
-              const { id, ...data } = item;
-              await addDoc(collection(db, "expenses"), {
-                ...data,
-                migratedAt: new Date(),
-                createdAt: new Date()
-              });
-            }));
-
-            console.log('Migration done!');
-            // Backup instead of delete, just in case
-            localStorage.setItem('expenses_backup', localData);
-            localStorage.removeItem('expenses');
-          }
-        } catch (err) {
-          console.error("Migration failed:", err);
-        }
-      }
-    };
-
-    migrateData();
-  }, []);
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+  }, [expenses]);
 
   const categories = ['Food', 'Transport', 'Books', 'Leisure', 'Bills', 'Other'];
 
@@ -79,16 +34,17 @@ function App() {
     }));
   };
 
-  const addExpense = async (e) => {
+  const addExpense = (e) => {
     e.preventDefault();
     if (!formData.description || !formData.amount) return;
 
-    await addDoc(collection(db, "expenses"), {
+    const newExpense = {
+      id: Date.now(),
       ...formData,
-      amount: parseFloat(formData.amount),
-      createdAt: new Date()
-    });
+      amount: parseFloat(formData.amount)
+    };
 
+    setExpenses([newExpense, ...expenses]);
     setFormData({
       date: new Date().toISOString().split('T')[0],
       description: '',
@@ -97,8 +53,8 @@ function App() {
     });
   };
 
-  const deleteExpense = async (id) => {
-    await deleteDoc(doc(db, "expenses", id));
+  const deleteExpense = (id) => {
+    setExpenses(expenses.filter(exp => exp.id !== id));
   };
 
   const generatePDF = () => {
