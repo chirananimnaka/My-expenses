@@ -5,6 +5,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   const [expenses, setExpenses] = useState(() => {
@@ -193,12 +194,36 @@ function App() {
   const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
-    <div className="container">
-      <h1 className="h1">Expense Tracker</h1>
-      <p className="subtitle">Manage your daily university expenses</p>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="container"
+    >
+      <motion.h1
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="h1"
+      >
+        Expense Tracker
+      </motion.h1>
+      <motion.p
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="subtitle"
+      >
+        Manage your daily university expenses
+      </motion.p>
 
       {/* Summary Card */}
-      <div className="card summary-card">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        whileHover={{ scale: 1.02 }}
+        className="card summary-card"
+      >
         <h3>Daily Balance</h3>
         <div className="summary-total">
           LKR {expenses
@@ -207,10 +232,15 @@ function App() {
             .toFixed(2)}
         </div>
         <p>Total Spent Today</p>
-      </div>
+      </motion.div>
 
       {/* Add Expense Form */}
-      <div className="card">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="card"
+      >
         <h2 className="form-label" style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--primary)' }}>Add New Expense</h2>
         <form onSubmit={addExpense}>
           <div className="form-group">
@@ -268,17 +298,28 @@ function App() {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: '1rem' }}
+          >
             Add Expense
-          </button>
+          </motion.button>
         </form>
-      </div>
+      </motion.div>
 
       {/* Spending Analysis & Budget */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
 
         {/* Monthly Budget */}
-        <div className="card">
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="card"
+        >
           <h2 className="form-label" style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--primary)' }}>Monthly Budget</h2>
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#6b7280' }}>
@@ -287,12 +328,15 @@ function App() {
             </div>
             {/* Progress Bar */}
             <div style={{ height: '10px', backgroundColor: '#e5e7eb', borderRadius: '5px', overflow: 'hidden' }}>
-              <div style={{
-                height: '100%',
-                width: `${Math.min((expenses.reduce((acc, curr) => acc + curr.amount, 0) / (budget || 1)) * 100, 100)}%`,
-                backgroundColor: expenses.reduce((acc, curr) => acc + curr.amount, 0) > budget ? '#ef4444' : '#10b981',
-                transition: 'width 0.3s ease'
-              }}></div>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min((expenses.reduce((acc, curr) => acc + curr.amount, 0) / (budget || 1)) * 100, 100)}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                style={{
+                  height: '100%',
+                  backgroundColor: expenses.reduce((acc, curr) => acc + curr.amount, 0) > budget ? '#ef4444' : '#10b981'
+                }}
+              />
             </div>
           </div>
           <div className="form-group">
@@ -305,10 +349,16 @@ function App() {
               placeholder="Enter monthly budget"
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* Category Chart */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="card"
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+        >
           <h2 className="form-label" style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--primary)', alignSelf: 'flex-start' }}>Category Analysis</h2>
           <div style={{ width: '250px', height: '250px' }}>
             {expenses.length > 0 ? (
@@ -334,11 +384,16 @@ function App() {
               <p style={{ textAlign: 'center', color: '#9ca3af', marginTop: '4rem' }}>No data to display</p>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Report Generation Section */}
-      <div className="card">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="card"
+      >
         <h2 className="form-label" style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--primary)' }}>Generate Report</h2>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
           <div className="form-group" style={{ flex: 1, minWidth: '140px', marginBottom: 0 }}>
@@ -359,51 +414,71 @@ function App() {
               onChange={(e) => setReportDateRange({ ...reportDateRange, end: e.target.value })}
             />
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={generatePDF}
             className="btn"
             style={{ backgroundColor: '#10b981', color: 'white', height: '46px', flex: 1, minWidth: '200px' }}
           >
             Generate Report for Amma
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Expense List */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.6 }}
+        className="card"
+        style={{ padding: 0, overflow: 'hidden' }}
+      >
         {expenses.length === 0 ? (
           <div className="empty-state">
             <p>No expenses added yet.</p>
           </div>
         ) : (
           <ul className="expense-list">
-            {expenses.map(expense => (
-              <li key={expense.id} className="expense-item">
-                <div className="expense-details">
-                  <div className="expense-category">{expense.category}</div>
-                  <div className="expense-desc">{expense.description}</div>
-                  <div className="expense-date">{expense.date}</div>
-                </div>
-                <div className="expense-amount">
-                  LKR {expense.amount.toFixed(2)}
-                </div>
-                <button
-                  onClick={() => deleteExpense(expense.id)}
-                  className="btn-danger"
-                  aria-label="Delete expense"
+            <AnimatePresence>
+              {expenses.map(expense => (
+                <motion.li
+                  key={expense.id}
+                  className="expense-item"
+                  layout
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  ✕
-                </button>
-              </li>
-            ))}
+                  <div className="expense-details">
+                    <div className="expense-category">{expense.category}</div>
+                    <div className="expense-desc">{expense.description}</div>
+                    <div className="expense-date">{expense.date}</div>
+                  </div>
+                  <div className="expense-amount">
+                    LKR {expense.amount.toFixed(2)}
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.1, backgroundColor: '#ef4444' }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => deleteExpense(expense.id)}
+                    className="btn-danger"
+                    aria-label="Delete expense"
+                  >
+                    ✕
+                  </motion.button>
+                </motion.li>
+              ))}
+            </AnimatePresence>
           </ul>
         )}
-      </div>
+      </motion.div>
 
       <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.75rem', marginTop: '2rem' }}>
         System Created By Chirana Nimnaka
       </div>
-    </div>
+    </motion.div>
   );
 }
 
