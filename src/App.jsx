@@ -33,28 +33,40 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // One-time migration of local storage data to Firestore
+  // One-time migration of local storage data to Firestore (Fixed)
   useEffect(() => {
-    const localData = localStorage.getItem('expenses');
-    if (localData) {
-      const parsedData = JSON.parse(localData);
-      if (parsedData.length > 0) {
-        // Upload each local expense to Firestore
-        parsedData.forEach(async (item) => {
-          // check if already exists to avoid duplicates is hard without unique IDs, 
-          // but we'll assume migration is one-off.
-          // Better strategy: ask user or just do it.
-          // To be safe against infinite loops, we'll clear localStorage after reading.
-          delete item.id; // Let Firestore generate ID
-          await addDoc(collection(db, "expenses"), {
-            ...item,
-            createdAt: new Date()
-          });
-        });
-        localStorage.removeItem('expenses'); // Clear local storage to prevent re-upload
-        console.log('Migrated local data to cloud');
+    const migrateData = async () => {
+      const localData = localStorage.getItem('expenses');
+
+      if (localData) {
+        try {
+          const parsedData = JSON.parse(localData);
+          if (Array.isArray(parsedData) && parsedData.length > 0) {
+            console.log('Starting migration...', parsedData.length);
+
+            // Wait for ALL uploads to finish
+            await Promise.all(parsedData.map(async (item) => {
+              // Remove local ID, let Firestore handle it
+              const { id, ...data } = item;
+              await addDoc(collection(db, "expenses"), {
+                ...data,
+                migratedAt: new Date(),
+                createdAt: new Date()
+              });
+            }));
+
+            console.log('Migration done!');
+            // Backup instead of delete, just in case
+            localStorage.setItem('expenses_backup', localData);
+            localStorage.removeItem('expenses');
+          }
+        } catch (err) {
+          console.error("Migration failed:", err);
+        }
       }
-    }
+    };
+
+    migrateData();
   }, []);
 
   const categories = ['Food', 'Transport', 'Books', 'Leisure', 'Bills', 'Other'];
