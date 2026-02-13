@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { db } from './firebase';
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 function App() {
-  const [expenses, setExpenses] = useState(() => {
-    const saved = localStorage.getItem('expenses');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [expenses, setExpenses] = useState([]);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -20,9 +19,18 @@ function App() {
     end: new Date().toISOString().split('T')[0]
   });
 
+  // Load expenses from Firestore
   useEffect(() => {
-    localStorage.setItem('expenses', JSON.stringify(expenses));
-  }, [expenses]);
+    const q = query(collection(db, "expenses"), orderBy("date", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const expensesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setExpenses(expensesData);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const categories = ['Food', 'Transport', 'Books', 'Leisure', 'Bills', 'Other'];
 
@@ -34,17 +42,16 @@ function App() {
     }));
   };
 
-  const addExpense = (e) => {
+  const addExpense = async (e) => {
     e.preventDefault();
     if (!formData.description || !formData.amount) return;
 
-    const newExpense = {
-      id: Date.now(),
+    await addDoc(collection(db, "expenses"), {
       ...formData,
-      amount: parseFloat(formData.amount)
-    };
+      amount: parseFloat(formData.amount),
+      createdAt: new Date()
+    });
 
-    setExpenses([newExpense, ...expenses]);
     setFormData({
       date: new Date().toISOString().split('T')[0],
       description: '',
@@ -53,8 +60,8 @@ function App() {
     });
   };
 
-  const deleteExpense = (id) => {
-    setExpenses(expenses.filter(exp => exp.id !== id));
+  const deleteExpense = async (id) => {
+    await deleteDoc(doc(db, "expenses", id));
   };
 
   const generatePDF = () => {
