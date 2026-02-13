@@ -20,6 +20,7 @@ function App() {
   });
 
   // Load expenses from Firestore
+  // Load expenses from Firestore
   useEffect(() => {
     const q = query(collection(db, "expenses"), orderBy("date", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -30,6 +31,30 @@ function App() {
       setExpenses(expensesData);
     });
     return () => unsubscribe();
+  }, []);
+
+  // One-time migration of local storage data to Firestore
+  useEffect(() => {
+    const localData = localStorage.getItem('expenses');
+    if (localData) {
+      const parsedData = JSON.parse(localData);
+      if (parsedData.length > 0) {
+        // Upload each local expense to Firestore
+        parsedData.forEach(async (item) => {
+          // check if already exists to avoid duplicates is hard without unique IDs, 
+          // but we'll assume migration is one-off.
+          // Better strategy: ask user or just do it.
+          // To be safe against infinite loops, we'll clear localStorage after reading.
+          delete item.id; // Let Firestore generate ID
+          await addDoc(collection(db, "expenses"), {
+            ...item,
+            createdAt: new Date()
+          });
+        });
+        localStorage.removeItem('expenses'); // Clear local storage to prevent re-upload
+        console.log('Migrated local data to cloud');
+      }
+    }
   }, []);
 
   const categories = ['Food', 'Transport', 'Books', 'Leisure', 'Bills', 'Other'];
